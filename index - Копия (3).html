@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Адмінка - Налаштування швидкості</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #000; }
+        #map { height: 100vh; width: 100vw; }
+        .ui-element { position: absolute; z-index: 1000; }
+        
+        .toggle-ui-btn {
+            bottom: 20px; left: 20px; width: 45px; height: 45px;
+            background: #ff0000; color: white; border: 2px solid #fff;
+            border-radius: 50%; font-weight: 900; font-size: 20px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        .controls-panel { 
+            top: 10px; right: 10px; display: flex; flex-direction: column; 
+            gap: 6px; width: 170px; background: rgba(0,0,0,0.85); 
+            padding: 8px; border-radius: 8px; border: 1px solid #ff0000;
+        }
+        
+        .hidden { opacity: 0; pointer-events: none; }
+        .btn { background: #1a1a1a; color: white; border: 1px solid #444; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; }
+        .btn img { width: 20px; height: 20px; }
+        .btn.active { background: #ff0000; border-color: #fff; }
+        .btn-danger { border-color: #ff4444; color: #ff4444; justify-content: center; margin-top: 10px; }
+        
+        .unit-icon { display: block; pointer-events: none; width: 30px !important; height: 30px !important; }
+    </style>
+</head>
+<body>
+
+    <button class="toggle-ui-btn ui-element" onclick="toggleUI()">A</button>
+
+    <div class="controls-panel ui-element" id="mainUI">
+        <button class="btn" onclick="setActiveMode('shahed', 's1.png', 185)">
+            <img src="s1.png"> ШАХЕД
+        </button>
+        <button class="btn" onclick="setActiveMode('scout', 'orl10.png', 120)">
+            <img src="orl10.png"> РОЗВІДНИК
+        </button>
+        <button class="btn" onclick="setActiveMode('kab', 'kab.png', 700)">
+            <img src="kab.png"> КАБ
+        </button>
+        
+        <hr style="width:100%; border:0; border-top:1px solid #ff0000; margin: 5px 0; opacity: 0.5;">
+        
+        <button class="btn btn-danger" onclick="setActiveMode('delete_one')">🗑️ ВИДАЛИТИ ОДНУ</button>
+        <button class="btn btn-danger" onclick="clearAllData()">⚠️ ОЧИСТИТИ ВСЕ</button>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = { databaseURL: "https://map-objects-75fa0-default-rtdb.europe-west1.firebasedatabase.app/" };
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const map = L.map('map', { attributionControl: false }).setView([48.30, 34.84], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        window.toggleUI = () => document.getElementById('mainUI').classList.toggle('hidden');
+
+        fetch('85688797.geojson').then(res => res.json()).then(geoData => {
+            const world = [[90, -200], [90, 200], [-90, 200], [-90, -200], [90, -200]];
+            let coords = geoData.geometry.coordinates;
+            while (coords.length === 1 && Array.isArray(coords[0][0])) { coords = coords[0]; }
+            const region = coords.map(c => [c[1], c[0]]);
+            L.polygon([world, region], { color: 'transparent', fillColor: '#1a1a1a', fillOpacity: 0.67, interactive: false }).addTo(map);
+            L.polyline(region, { color: '#FF0000', weight: 3, opacity: 1, lineJoin: 'round', lineCap: 'round', interactive: false }).addTo(map);
+            map.fitBounds(L.latLngBounds(region));
+        });
+
+        let activeMode = null, activeIconUrl = '', activeSpeed = 0, units = [], currentUnit = null;
+
+        function getAngle(start, end) {
+            const p1 = map.project(start);
+            const p2 = map.project(end);
+            return (Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI) + 90;
+        }
+
+        function sync() {
+            const data = units.map(u => ({
+                id: u.id, lat: u.pos.lat, lng: u.pos.lng,
+                targetLat: u.target ? u.target.lat : null,
+                targetLng: u.target ? u.target.lng : null,
+                type: u.type, angle: u.angle || 0, iconUrl: u.iconUrl
+            }));
+            set(ref(db, 'live_units'), data);
+        }
+
+        function startFlight(u) {
+            if (u.interval) clearInterval(u.interval);
+            u.interval = setInterval(() => {
+                if (!u.target) return;
+                const dist = map.distance(u.pos, u.target);
+                if (dist < 100) { clearInterval(u.interval); return; }
+                const step = (u.speed * 1000 / 3600) * (50 / 1000);
+                const ratio = step / dist;
+                u.pos = L.latLng(u.pos.lat + (u.target.lat - u.pos.lat) * ratio, u.pos.lng + (u.target.lng - u.pos.lng) * ratio);
+                updateVisuals(u);
+                sync();
+            }, 50);
+        }
+
+        window.setActiveMode = (mode, icon = '', speed = 0) => {
+            activeMode = mode; activeIconUrl = icon; activeSpeed = speed; currentUnit = null;
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            if(window.event) window.event.currentTarget.classList.add('active');
+        };
+
+        window.clearAllData = () => {
+            if(confirm("Очистити все?")) {
+                units.forEach(u => { if(u.interval) clearInterval(u.interval); map.removeLayer(u.marker); if(u.line) map.removeLayer(u.line); });
+                units = []; sync();
+            }
+        };
+
+        map.on('click', (e) => {
+            if (activeMode === 'delete_one' || activeMode === null) return;
+            if (activeIconUrl && !currentUnit) {
+                const newUnit = { 
+                    id: Date.now(), pos: e.latlng, target: null, 
+                    type: activeMode, iconUrl: activeIconUrl, 
+                    angle: 0, speed: activeSpeed 
+                };
+                addMarker(newUnit);
+                units.push(newUnit);
+                currentUnit = newUnit;
+            } else if (currentUnit) {
+                currentUnit.target = e.latlng;
+                currentUnit.angle = getAngle(currentUnit.pos, currentUnit.target);
+                startFlight(currentUnit);
+                currentUnit = null;
+            }
+        });
+
+        function addMarker(u) {
+            const icon = L.divIcon({
+                className: 'custom-div',
+                html: `<img src="${u.iconUrl}" class="unit-icon" style="transform:rotate(${u.angle}deg)">`,
+                iconSize: [30, 30], iconAnchor: [15, 15]
+            });
+            u.marker = L.marker(u.pos, { icon: icon, draggable: true }).addTo(map);
+            u.line = L.polyline([u.pos, u.target || u.pos], { color: 'red', weight: 2, dashArray: '5,5', opacity: 0.6 }).addTo(map);
+            
+            u.marker.on('drag', (e) => {
+                u.pos = e.latlng;
+                if (u.target) u.angle = getAngle(u.pos, u.target);
+                updateVisuals(u);
+            });
+            u.marker.on('dragend', () => { if(u.target) startFlight(u); sync(); });
+            u.marker.on('click', (ev) => {
+                L.DomEvent.stopPropagation(ev);
+                if (activeMode === 'delete_one') {
+                    if(u.interval) clearInterval(u.interval);
+                    map.removeLayer(u.marker); map.removeLayer(u.line);
+                    units = units.filter(i => i.id !== u.id);
+                    sync();
+                } else { currentUnit = u; }
+            });
+        }
+
+        function updateVisuals(u) {
+            u.marker.setLatLng(u.pos);
+            u.line.setLatLngs([u.pos, u.target || u.pos]);
+            const img = u.marker.getElement()?.querySelector('img');
+            if (img) img.style.transform = `rotate(${u.angle}deg)`;
+        }
+    </script>
+</body>
+</html>
