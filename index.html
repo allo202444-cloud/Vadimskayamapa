@@ -3,230 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Адмінка - Final Fixed</title>
+    <title>UA CONTROL PANEL - GROMADA READY</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.17/leaflet-maplibre-gl.js"></script>
+
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #000; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; overflow: hidden; background: #000; }
         #map { height: 100vh; width: 100vw; background: #000; z-index: 1; }
-        .ui-element { position: absolute; z-index: 2000; transition: opacity 0.3s; }
-        .bottom-left-btns { bottom: 20px; left: 20px; display: flex; gap: 10px; }
-        .round-btn { width: 45px; height: 45px; color: white; border: 2px solid #fff; border-radius: 50%; font-weight: 900; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .btn-a { background: #ff0000; }
-        .btn-theme { background: #222; border-color: #aaa; }
-        .btn-settings { background: #444; font-size: 24px; }
         
-        .settings-panel { top: 10px; left: 10px; width: 200px; max-height: 70vh; background: rgba(0,0,0,0.95); padding: 10px; border-radius: 8px; border: 1px solid #fff; color: white; display: none; overflow-y: auto; z-index: 3000; }
-        .controls-panel { top: 10px; right: 10px; width: 150px; background: rgba(0,0,0,0.85); padding: 8px; border-radius: 8px; border: 1px solid #ff0000; display: flex; flex-direction: column; gap: 6px; }
-        .hidden { opacity: 0; pointer-events: none; }
-        .settings-panel.active { display: block; }
+        .unit-box { position: relative; width: 34px; height: 34px; }
+        .main-img { width: 34px; height: 34px; display: block; }
+        .st-icon { position: absolute; width: 18px; height: 18px; z-index: 10; pointer-events: none; }
+        .st-krygi { bottom: -5px; left: -5px; }
+        .st-vtracheno { bottom: -5px; right: -5px; }
         
-        .btn { background: #1a1a1a; color: white; border: 1px solid #444; padding: 8px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 10px; display: flex; align-items: center; gap: 5px; text-transform: uppercase; width: 100%; }
-        .btn img { width: 18px; height: 18px; }
-        .btn.active { background: #ff0000; border-color: #fff; }
-        .setting-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 11px; border-bottom: 1px solid #222; padding-bottom: 3px; }
-        .all-ukraine-btn { background: #ff0000; border: none; color: white; padding: 6px; width: 100%; border-radius: 4px; margin-bottom: 10px; cursor: pointer; font-weight: bold; font-size: 11px; text-transform: uppercase; }
-        .unit-icon { display: block; pointer-events: none; width: 30px !important; height: 30px !important; }
+        .yellow-filter { filter: brightness(0) saturate(100%) invert(86%) sepia(88%) saturate(3061%) hue-rotate(352deg) brightness(105%) contrast(104%) !important; }
+        .is-down { opacity: 0.5 !important; }
+        .selected-unit { animation: flash 0.6s infinite alternate; filter: drop-shadow(0 0 10px #fff); z-index: 9999; }
+        @keyframes flash { from { opacity: 1; } to { opacity: 0.3; } }
+
+        .ui-element { position: absolute; z-index: 4000; }
+        .bottom-btns { bottom: 20px; left: 20px; display: flex; flex-wrap: wrap; gap: 10px; max-width: 420px; }
+        .r-btn { width: 48px; height: 48px; color: white; border: 2px solid #fff; border-radius: 50%; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #222; }
+        .active-red { background: #ff0000 !important; }
+        .btn-off { opacity: 0.4; filter: grayscale(1); }
+
+        .m-menu { bottom: 90px; left: 20px; width: 220px; background: rgba(0,0,0,0.95); padding: 12px; border-radius: 8px; border: 1px solid white; display: none; flex-direction: column; gap: 8px; color: white; }
+        .panel-right { top: 10px; right: 10px; width: 150px; background: rgba(0,0,0,0.9); padding: 10px; border-radius: 8px; border: 1px solid red; display: flex; flex-direction: column; gap: 5px; }
+        #setM { top: 10px; left: 10px; width: 250px; max-height: 70vh; background: rgba(0,0,0,0.95); padding: 0; border-radius: 8px; border: 1px solid white; color: white; display: none; overflow: hidden; flex-direction: column; }
+        
+        .region-item { display: flex; align-items: center; padding: 10px; cursor: pointer; border-bottom: 1px solid #222; }
+        .region-item:hover { background: #333; }
+        .region-item input { margin-right: 12px; width: 18px; height: 18px; cursor: pointer; }
+
+        .btn-u { background: #222; color: white; border: 1px solid #444; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; width: 100%; }
+        .btn-u.act, .btn-u.active { background: red; border-color: #fff; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="bottom-left-btns ui-element" id="leftBtns">
-        <button class="round-btn btn-a" onclick="toggleUI()">A</button>
-        <button class="round-btn btn-theme" id="themeBtn" onclick="toggleMapTheme()">🌙</button>
-        <button class="round-btn btn-settings" onclick="toggleSettings()">⚙️</button>
-    </div>
-
-    <div class="settings-panel ui-element" id="settingsMenu">
-        <h5 style="margin: 0 0 8px 0; color: #ff0000; font-size: 12px; text-align: center;">ОБЛАСТІ</h5>
-        <button class="all-ukraine-btn" onclick="toggleAllUkraine()">Вся Україна</button>
-        <div id="regionsList"></div>
-    </div>
-
-    <div class="controls-panel ui-element" id="mainUI">
-        <button class="btn" id="btn-shahed" onclick="setActiveMode('shahed', 's1.png', 185)"><img src="s1.png"> ШАХЕД</button>
-        <button class="btn" id="btn-scout" onclick="setActiveMode('scout', 'orl10.png', 120)"><img src="orl10.png"> РОЗВІДНИК</button>
-        <button class="btn" id="btn-kab" onclick="setActiveMode('kab', 'kab.png', 700)"><img src="kab.png"> КАБ</button>
-        <hr style="width:100%; border:0; border-top:1px solid #ff0000; margin: 3px 0; opacity: 0.5;">
-        <button class="btn" id="btn-gromady" onclick="toggleGromadaDetection()">🌐 ГРОМАДИ: OFF</button>
-        <hr style="width:100%; border:0; border-top:1px solid #ff0000; margin: 3px 0; opacity: 0.5;">
-        <button class="btn" style="color: #ff4444;" id="btn-delete" onclick="setActiveMode('delete_one')">ВИДАЛИТИ</button>
-        <button class="btn" style="color: #ff4444;" onclick="clearAllData()">ОЧИСТИТИ ВСЕ</button>
-    </div>
-
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div class="bottom-btns ui-element">
+        <button class="r-btn" style="background:red" onclick="window.tUI()">A</button>
+        <button class="r-btn" id="btn-C" onclick="window.tC()">C</button>
+        <button class="r-btn" id="lBtn" style="background:#0055ff" onclick="window.tLines()">↗️</button>
+        <button class="r-btn" style="background:#8800ff" onclick="window.tMenu('wmM')">📝</button>
+        <button class="r-btn btn-off" id="trBtn" style="background:#00cc66" onclick="window.tTraces()">👣</button>
+        <button class="r-btn" style="background:#ffaa00" onclick="window.tMenu('trM')">🎨</button>
+        <button class="r-btn" style="background:#444" id="themeBtn" onclick="window.tTheme()">☀️</button>
+        <button class="r-btn" style="background:#555" onclick="window.tSet()">⚙️</button>
+    </div>
+
+    <div id="wmM" class="m-menu ui-element">
+        <strong>ВОДЯНИЙ ЗНАК</strong>
+        <input type="text" id="wmIn" placeholder="Введіть текст..." style="width:90%; padding:8px; background:#111; color:white; border:1px solid #555;">
+    </div>
+    
+    <div id="trM" class="m-menu ui-element">
+        <strong>КОЛІР СЛІДІВ</strong>
+        <input type="color" id="trCol" value="#ffffff" style="width:100%; height:40px; border:none; background:none; cursor:pointer;" oninput="window.updateTrColor(this.value)">
+    </div>
+
+    <div id="setM" class="ui-element">
+        <div style="padding:15px; border-bottom:1px solid #444; text-align:center; background:#111;">
+            <button class="btn-u" onclick="window.tUA()">Вся Украина</button>
+        </div>
+        <div id="regL" style="overflow-y:auto; flex-grow:1;"></div>
+    </div>
+
+    <div class="panel-right ui-element" id="mainUI">
+        <button class="btn-u" id="btn-shahed" onclick="window.setMode('shahed','s1.png',185)">ШАХЕД</button>
+        <button class="btn-u" id="btn-gerber" onclick="window.setMode('gerber','gerber.png',150)">ГЕРБЕРА</button>
+        <button class="btn-u" id="btn-geran" onclick="window.setMode('geran','geran.png',300)">ГЕРАНЬ-3/5</button>
+        <button class="btn-u" id="btn-scout" onclick="window.setMode('scout','orl10.png',120)">РОЗВІДНИК</button>
+        <button class="btn-u" id="btn-kab" onclick="window.setMode('kab','kab.png',700)">КАБ</button>
+        <hr style="border:0; border-top:1px solid red; width:100%;">
+        <button class="btn-u" id="btn-gromady" onclick="window.toggleGromadaDetection()">🌐 ГРОМАДИ: OFF</button>
+        <button class="btn-u" style="color:red; margin-top:10px;" onclick="window.clr()">ОЧИСТИТИ ВСЕ</button>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue, remove, update, push, get, onChildRemoved } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        const firebaseConfig = { databaseURL: "https://map-objects-75fa0-default-rtdb.europe-west1.firebasedatabase.app/" };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const db = getDatabase(initializeApp({ databaseURL: "https://map-objects-75fa0-default-rtdb.europe-west1.firebasedatabase.app/" }));
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([48.3, 34.8], 6);
 
-        const lightLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-        const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png');
+        const dark = L.maplibreGL({ style: 'https://api.maptiler.com/maps/019cb892-2407-7585-af1f-77c38caf7c16/style.json?key=ZrkYYQ9nDqIWbw509O5R' }).addTo(map);
+        const light = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
-        const map = L.map('map', { attributionControl: false, layers: [lightLayer] }).setView([48.30, 34.84], 6);
+        let units = {}, trLines = {}, isTr = false, isC = false, selId = null, mode = null, icon = '', speed = 0, curId = null, isD = true, showLines = true;
+        let gromadaLayers = [], isGromadaActive = false;
 
-        // --- ЛІНІЯ ФРОНТУ (DEEPSTATE) ---
-        let deepStateLayer;
-        fetch('deepstatemap_data_20260221.json').then(res => res.json()).then(data => {
-            deepStateLayer = L.geoJson(data, {
-                style: { color: "transparent", fillColor: "#ff0000", fillOpacity: 0.4, interactive: false }
-            }).addTo(map);
-        });
-
-        // Перемикач теми + приховання DeepState
-        let isDarkMode = false;
-        window.toggleMapTheme = () => {
-            isDarkMode = !isDarkMode;
-            const btn = document.getElementById('themeBtn');
-            if (isDarkMode) { 
-                map.removeLayer(lightLayer); 
-                darkLayer.addTo(map); 
-                btn.innerText = "☀️";
-                if (deepStateLayer) map.removeLayer(deepStateLayer); // Вимикаємо фронт на темній карті
-            } else { 
-                map.removeLayer(darkLayer); 
-                lightLayer.addTo(map); 
-                btn.innerText = "🌙";
-                if (deepStateLayer) deepStateLayer.addTo(map); // Вмикаємо фронт назад
-            }
-        };
-
-        // --- ГРОМАДИ ---
-        let gromadaLayers = [];
-        let isGromadaDetectionActive = false;
+        // --- ЗАГРУЗКА ГРОМАД ---
         fetch('громады если надо.json').then(res => res.json()).then(data => {
             L.geoJson(data, {
-                style: { color: "transparent", fillColor: "transparent", fillOpacity: 0, weight: 1, interactive: false },
-                onEachFeature: (f, l) => { l._customBounds = l.getBounds(); gromadaLayers.push(l); }
+                style: { fillOpacity: 0, weight: 1, color: "transparent", interactive: false },
+                onEachFeature: (f, layer) => { 
+                    layer._customBounds = layer.getBounds(); 
+                    gromadaLayers.push(layer); 
+                }
             }).addTo(map);
         });
 
-        window.toggleGromadaDetection = () => {
-            isGromadaDetectionActive = !isGromadaDetectionActive;
-            const btn = document.getElementById('btn-gromady');
-            btn.classList.toggle('active', isGromadaDetectionActive);
-            btn.innerText = isGromadaDetectionActive ? "🌐 ГРОМАДИ: ON" : "🌐 ГРОМАДИ: OFF";
-            if(!isGromadaDetectionActive) gromadaLayers.forEach(l => l.setStyle({ fillOpacity: 0 }));
+        const getAng = (l1, n1, l2, n2) => {
+            const dy = l2 - l1, dx = Math.cos(Math.PI/180 * l1) * (n2 - n1);
+            return Math.atan2(dx, dy) * (180 / Math.PI);
         };
 
-        // --- МАСКА ТА ОБЛАСТІ ---
-        const world = [[90, -180], [90, 180], [-90, 180], [-90, -180], [90, -180]];
-        let maskLayer, activeBorders = L.layerGroup().addTo(map), selectedFeatures = [], allFeatures = [];
-
-        fetch('области.geojson').then(res => res.json()).then(data => {
-            allFeatures = data.features;
-            const list = document.getElementById('regionsList');
-            allFeatures.forEach((f, i) => {
-                const div = document.createElement('div');
-                div.className = 'setting-item';
-                div.innerHTML = `<input type="checkbox" id="reg-${i}"> <label for="reg-${i}">${f.properties.shapeName || `Обл ${i+1}`}</label>`;
-                const chk = div.querySelector('input');
-                chk.onchange = (e) => {
-                    if(e.target.checked) selectedFeatures.push(f);
-                    else selectedFeatures = selectedFeatures.filter(item => item !== f);
-                    updateMask();
-                };
-                list.appendChild(div);
-            });
-        });
-
-        window.toggleAllUkraine = () => {
-            const shouldSelectAll = selectedFeatures.length < allFeatures.length;
-            selectedFeatures = shouldSelectAll ? [...allFeatures] : [];
-            document.querySelectorAll('#regionsList input').forEach(c => c.checked = shouldSelectAll);
-            updateMask();
+        window.updateTrColor = (val) => {
+            Object.values(trLines).forEach(line => line.setStyle({ color: val }));
         };
 
-        function updateMask() {
-            if (maskLayer) map.removeLayer(maskLayer);
-            activeBorders.clearLayers();
-            if (selectedFeatures.length === 0) return;
-            let maskCoords = [world];
-            selectedFeatures.forEach(f => {
-                L.geoJson(f, { style: { color: '#FF0000', weight: 2, fill: false, interactive: false } }).addTo(activeBorders);
-                let c = f.geometry.coordinates;
-                if (f.geometry.type === "Polygon") maskCoords.push(c[0].map(p => [p[1], p[0]]));
-                else f.geometry.coordinates.forEach(poly => maskCoords.push(poly[0].map(p => [p[1], p[0]])));
-            });
-            maskLayer = L.polygon(maskCoords, { color: 'transparent', fillColor: '#1a1a1a', fillOpacity: 0.67, interactive: false }).addTo(map);
-        }
+        window.tUI = () => document.getElementById('mainUI').classList.toggle('hidden');
+        window.tSet = () => { let s = document.getElementById('setM'); s.style.display = (s.style.display==='flex'?'none':'flex'); };
+        window.tC = () => { isC = !isC; document.getElementById('btn-C').classList.toggle('active-red', isC); selId = null; window.reDraw(); };
+        window.tMenu = (id) => { 
+            let m = document.getElementById(id);
+            let vis = m.style.display === 'flex';
+            document.querySelectorAll('.m-menu').forEach(x => x.style.display = 'none');
+            m.style.display = vis ? 'none' : 'flex';
+        };
+        window.tTheme = () => { 
+            isD = !isD; 
+            isD ? (map.removeLayer(light), dark.addTo(map)) : (map.removeLayer(dark), light.addTo(map)); 
+            document.getElementById('themeBtn').innerText = isD ? '☀️' : '🌙';
+            window.reDraw(); 
+        };
+        window.setMode = (m, i, s) => { 
+            mode = m; icon = i; speed = s; curId = null; 
+            document.querySelectorAll('.panel-right .btn-u').forEach(b=>b.classList.remove('act'));
+            document.getElementById('btn-'+m).classList.add('act');
+        };
+        window.tLines = () => { 
+            showLines = !showLines; 
+            document.getElementById('lBtn').classList.toggle('btn-off', !showLines);
+            Object.values(units).forEach(u => showLines ? u.line.addTo(map) : map.removeLayer(u.line));
+        };
+        
+        window.toggleGromadaDetection = () => { 
+            isGromadaActive = !isGromadaActive; 
+            let b = document.getElementById('btn-gromady'); 
+            b.classList.toggle('active', isGromadaActive); 
+            b.innerText = isGromadaActive ? "🌐 ГРОМАДИ: ON" : "🌐 ГРОМАДИ: OFF"; 
+            if(!isGromadaActive) gromadaLayers.forEach(l => l.setStyle({fillOpacity:0})); 
+        };
 
-        // --- СИНХРОНІЗАЦІЯ ЮНІТІВ ---
-        let units = {}; 
-        onValue(ref(db, 'live_units'), (snapshot) => {
-            const data = snapshot.val() || {};
-            Object.keys(units).forEach(id => { 
-                if (!data[id]) { map.removeLayer(units[id].marker); map.removeLayer(units[id].line); delete units[id]; } 
-            });
-            Object.keys(data).forEach(id => {
-                const u = data[id];
-                if (!units[id]) {
-                    const icon = L.divIcon({ className: 'custom-div', html: `<img src="${u.iconUrl}" class="unit-icon" style="transform:rotate(${u.angle}deg)">`, iconSize: [30, 30], iconAnchor: [15, 15] });
-                    const marker = L.marker([u.startLat, u.startLng], { icon: icon }).addTo(map);
-                    const line = L.polyline([[u.startLat, u.startLng], [u.targetLat || u.startLat, u.targetLng || u.startLng]], { color: 'red', weight: 2, dashArray: '5,5', opacity: 0.5 }).addTo(map);
-                    units[id] = { ...u, marker, line };
-                    marker.on('click', (ev) => { L.DomEvent.stopPropagation(ev); if (activeMode === 'delete_one') remove(ref(db, `live_units/${id}`)); });
-                } else { 
-                    Object.assign(units[id], u); 
-                    units[id].line.setLatLngs([[u.startLat, u.startLng], [u.targetLat || u.startLat, u.targetLng || u.startLng]]);
-                }
-            });
-        });
-
-        // --- ЦИКЛ РУХУ ТА ПІДСВІТКИ (2 КМ) ---
-        setInterval(() => {
-            const now = Date.now();
-            let shahedCoords = [];
-            Object.keys(units).forEach(id => {
-                const u = units[id];
-                if (!u.targetLat) return;
-                const duration = (map.distance(L.latLng(u.startLat, u.startLng), L.latLng(u.targetLat, u.targetLng)) / (u.speed * 1000 / 3600)) * 1000;
-                let progress = Math.min((now - u.startTime) / duration, 1);
-                const curLat = u.startLat + (u.targetLat - u.startLat) * progress;
-                const curLng = u.startLng + (u.targetLng - u.startLng) * progress;
-                u.marker.setLatLng([curLat, curLng]);
-                u.line.setLatLngs([[curLat, curLng], [u.targetLat, u.targetLng]]);
-                if (u.marker.getElement()) u.marker.getElement().querySelector('img').style.transform = `rotate(${u.angle}deg)`;
-                if (u.iconUrl === 's1.png') shahedCoords.push(L.latLng(curLat, curLng));
-            });
-
-            if (isGromadaDetectionActive) {
-                gromadaLayers.forEach(layer => {
-                    let active = shahedCoords.some(sPos => layer._customBounds.pad(0.05).contains(sPos) || sPos.distanceTo(layer._customBounds.getCenter()) < 3000);
-                    layer.setStyle({ fillOpacity: active ? 0.22 : 0, fillColor: '#ff0000' });
+        window.tTraces = async () => {
+            isTr = !isTr; document.getElementById('trBtn').classList.toggle('btn-off', !isTr);
+            const curCol = document.getElementById('trCol').value;
+            if(isTr) {
+                const snap = await get(ref(db, 'unit_traces'));
+                const data = snap.val() || {};
+                Object.keys(data).forEach(id => {
+                    const pts = Object.values(data[id]).map(p => [p[0], p[1]]);
+                    if(!trLines[id]) trLines[id] = L.polyline(pts, { color: curCol, weight: 2, opacity: 0.7 }).addTo(map);
                 });
-            }
-        }, 100);
-
-        // --- КЕРУВАННЯ ---
-        let activeMode = null, activeIconUrl = '', activeSpeed = 0, currentUnitId = null;
-        window.setActiveMode = (mode, icon, speed) => {
-            activeMode = mode; activeIconUrl = icon; activeSpeed = speed; currentUnitId = null;
-            document.querySelectorAll('.btn').forEach(b => { if(b.id !== 'btn-gromady') b.classList.remove('active'); });
-            const activeBtn = document.getElementById(`btn-${mode === 'delete_one' ? 'delete' : mode}`);
-            if (activeBtn) activeBtn.classList.add('active');
+            } else { Object.values(trLines).forEach(l => map.removeLayer(l)); trLines = {}; }
         };
+
+        onChildRemoved(ref(db, 'live_units'), (snap) => {
+            const id = snap.key;
+            if (trLines[id]) { map.removeLayer(trLines[id]); delete trLines[id]; }
+        });
+
+        window.reDraw = () => {
+            onValue(ref(db, 'live_units'), (snap) => {
+                const data = snap.val() || {};
+                Object.keys(units).forEach(id => { 
+                    if(!data[id]) { 
+                        map.removeLayer(units[id].marker); 
+                        map.removeLayer(units[id].line); 
+                        delete units[id]; 
+                        if(trLines[id]) { map.removeLayer(trLines[id]); delete trLines[id]; }
+                    } 
+                });
+                Object.keys(data).forEach(id => {
+                    const u = data[id];
+                    const filter = isD ? 'yellow-filter' : '';
+                    const dIcon = (isD && u.iconUrl === 's1.png') ? 'shahed.png' : u.iconUrl;
+
+                    const html = `<div class="unit-box ${u.isDown?'is-down':''}">
+                        <img src="${dIcon}" class="main-img ${filter} ${selId===id?'selected-unit':''}" style="transform:rotate(${u.angle}deg)">
+                        ${u.isCircling ? `<img src="krygi.png" class="st-icon st-krygi ${filter}">` : ''}
+                        ${u.isDown ? `<img src="vtracheno.png" class="st-icon st-vtracheno">` : ''}
+                    </div>`;
+
+                    if(!units[id]) {
+                        const m = L.marker([u.startLat, u.startLng], { icon: L.divIcon({ html, className: '', iconSize:[34,34] }) }).addTo(map);
+                        const l = L.polyline([[u.startLat, u.startLng], [u.targetLat||u.startLat, u.targetLng||u.startLng]], { color:'red', weight:2, dashArray:'5,5', opacity:0.5 });
+                        if(showLines) l.addTo(map);
+                        m.on('click', (e) => { 
+                            L.DomEvent.stopPropagation(e); 
+                            if(isC) { selId = id; window.reDraw(); } 
+                            else {
+                                m.bindPopup(`<div style="display:flex;flex-direction:column;gap:5px;width:115px;">
+                                    <button class="btn-u" onclick="window.setS('${id}','isCircling')">Кружлялка</button>
+                                    <button class="btn-u" onclick="window.setS('${id}','isDown')">Збито</button>
+                                    <button class="btn-u" style="color:red" onclick="window.del('${id}')">Видалити</button>
+                                </div>`).openPopup();
+                            }
+                        });
+                        units[id] = { ...u, marker: m, line: l };
+                    } else {
+                        units[id].marker.setIcon(L.divIcon({ html, className: '', iconSize:[34,34] }));
+                        Object.assign(units[id], u);
+                    }
+                });
+            });
+        };
+        window.reDraw();
 
         map.on('click', (e) => {
-            if (!activeMode || activeMode === 'delete_one') return;
-            if (!currentUnitId) {
-                const id = "u_" + Date.now();
-                set(ref(db, `live_units/${id}`), { id, startLat: e.latlng.lat, startLng: e.latlng.lng, targetLat: 0, targetLng: 0, iconUrl: activeIconUrl, speed: activeSpeed, angle: 0, startTime: Date.now() });
-                currentUnitId = id;
+            if(isC && selId) {
+                let u = units[selId], cur = u.marker.getLatLng();
+                update(ref(db, `live_units/${selId}`), { startLat: cur.lat, startLng: cur.lng, targetLat: e.latlng.lat, targetLng: e.latlng.lng, startTime: Date.now(), angle: getAng(cur.lat, cur.lng, e.latlng.lat, e.latlng.lng), isCircling: false, isDown: false });
+                selId = null; window.reDraw(); return;
+            }
+            if(!mode || isC) return;
+            if(!curId) {
+                let id = "u_" + Date.now();
+                set(ref(db, `live_units/${id}`), { id, startLat: e.latlng.lat, startLng: e.latlng.lng, targetLat: 0, targetLng: 0, iconUrl: icon, speed, angle: 0, startTime: Date.now(), isCircling: false, isDown: false });
+                curId = id;
             } else {
-                const u = units[currentUnitId];
-                update(ref(db, `live_units/${currentUnitId}`), { targetLat: e.latlng.lat, targetLng: e.latlng.lng, startTime: Date.now(), angle: 90 - (Math.atan2(e.latlng.lat - u.startLat, e.latlng.lng - u.startLng) * 180 / Math.PI) });
-                currentUnitId = null;
+                let u = units[curId];
+                update(ref(db, `live_units/${curId}`), { targetLat: e.latlng.lat, targetLng: e.latlng.lng, startTime: Date.now(), angle: getAng(u.startLat, u.startLng, e.latlng.lat, e.latlng.lng) });
+                curId = null;
+                document.querySelectorAll('.panel-right .btn-u').forEach(b=>b.classList.remove('act')); mode = null;
             }
         });
 
-        window.clearAllData = () => { if(confirm("Видалити все?")) remove(ref(db, 'live_units')); };
-        window.toggleUI = () => document.getElementById('mainUI').classList.toggle('hidden');
-        window.toggleSettings = () => document.getElementById('settingsMenu').classList.toggle('active');
+        window.setS = (id, f) => { 
+            let upd = { isCircling: false, isDown: false }; 
+            upd[f] = !units[id][f]; 
+            if(upd[f]) { upd.targetLat = 0; upd.targetLng = 0; if(f==='isCircling') upd.angle = 45; } 
+            update(ref(db, `live_units/${id}`), upd); map.closePopup(); 
+        };
+        window.del = (id) => { 
+            remove(ref(db, `live_units/${id}`)); 
+            remove(ref(db, `unit_traces/${id}`)); 
+            if(trLines[id]) { map.removeLayer(trLines[id]); delete trLines[id]; }
+        };
+        window.clr = () => {
+            if(confirm("Видалити все?")) {
+                remove(ref(db, 'live_units')); 
+                remove(ref(db, 'unit_traces'));
+                Object.values(trLines).forEach(l => map.removeLayer(l));
+                trLines = {};
+            }
+        };
+
+        // --- ЦИКЛ ОБНОВЛЕНИЯ (200ms) ---
+        setInterval(() => {
+            let now = Date.now();
+            const curCol = document.getElementById('trCol').value;
+            let currentPositions = [];
+
+            Object.keys(units).forEach(id => {
+                let u = units[id]; if(!u.targetLat || u.targetLat === 0) return;
+                let d = map.distance([u.startLat, u.startLng], [u.targetLat, u.targetLng]);
+                let p = Math.min((now - u.startTime) / ((d / (u.speed * 1000/3600)) * 1000), 1);
+                let cur = [u.startLat + (u.targetLat - u.startLat) * p, u.startLng + (u.targetLng - u.startLng) * p];
+                
+                u.marker.setLatLng(cur);
+                if(showLines) u.line.setLatLngs([cur, [u.targetLat, u.targetLng]]);
+                
+                // Для радара громад (только активные цели)
+                if (u.iconUrl === 's1.png' || u.iconUrl === 'gerber.png') {
+                    currentPositions.push(L.latLng(cur));
+                }
+
+                if (isTr && now % 3000 < 200) {
+                    push(ref(db, `unit_traces/${id}`), cur);
+                    if(!trLines[id]) trLines[id] = L.polyline([cur], { color: curCol, weight: 2, opacity: 0.7 }).addTo(map);
+                    else trLines[id].addLatLng(cur);
+                }
+            });
+
+            // РАДАР ГРОМАД (подсветка при сближении)
+            if (isGromadaActive) {
+                gromadaLayers.forEach(layer => {
+                    let hit = currentPositions.some(p => 
+                        layer._customBounds.pad(0.05).contains(p) || 
+                        p.distanceTo(layer._customBounds.getCenter()) < 3000
+                    );
+                    layer.setStyle({ fillColor: hit ? 'red' : 'transparent', fillOpacity: hit ? 0.25 : 0 });
+                });
+            }
+        }, 200);
+
+        let allF = [], selF = [];
+        const world = [[90, -180], [90, 180], [-90, 180], [-90, -180], [90, -180]];
+        let mask, borders = L.layerGroup().addTo(map);
+        fetch('области.geojson').then(r => r.json()).then(data => {
+            allF = data.features;
+            const list = document.getElementById('regL');
+            allF.forEach(f => {
+                const d = document.createElement('div'); d.className = 'region-item';
+                d.innerHTML = `<input type="checkbox"><span>${f.properties.shapeName || 'Обл'}</span>`;
+                d.onclick = (e) => { 
+                    let i = d.querySelector('input'); 
+                    if(e.target !== i) i.checked = !i.checked; 
+                    window.updM(f, i.checked); 
+                };
+                list.appendChild(d);
+            });
+        });
+        window.updM = (f, add) => {
+            if(f && f.geometry) { add ? selF.push(f) : (selF = selF.filter(x => x !== f)); }
+            if (mask) map.removeLayer(mask); borders.clearLayers();
+            if (!selF.length) return;
+            let coords = [world];
+            selF.forEach(sf => {
+                L.geoJson(sf, { style: { color: 'red', weight: 1, fill: false } }).addTo(borders);
+                let c = sf.geometry.coordinates;
+                if(sf.geometry.type === "Polygon") coords.push(c[0].map(p => [p[1], p[0]]));
+                else sf.geometry.coordinates.forEach(p => coords.push(p[0].map(x => [x[1], x[0]])));
+            });
+            mask = L.polygon(coords, { fillColor: '#333333', fillOpacity: 0.6, color: 'none', interactive: false }).addTo(map);
+        };
+        window.tUA = () => {
+            let s = selF.length < allF.length;
+            selF = s ? [...allF] : [];
+            document.querySelectorAll('#regL input').forEach(i => i.checked = s);
+            window.updM(null, false);
+        };
     </script>
 </body>
 </html>
