@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>UA CONTROL PANEL - GROMADA READY</title>
+    <title>UA CONTROL PANEL - ICONS FIX</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -21,9 +21,14 @@
         .st-krygi { bottom: -5px; left: -5px; }
         .st-vtracheno { bottom: -5px; right: -5px; }
         
-        .yellow-filter { filter: brightness(0) saturate(100%) invert(86%) sepia(88%) saturate(3061%) hue-rotate(352deg) brightness(105%) contrast(104%) !important; }
+        /* Фильтр применяется только к основному изображению */
+        .yellow-filter .main-img { filter: brightness(0) saturate(100%) invert(86%) sepia(88%) saturate(3061%) hue-rotate(352deg) brightness(105%) contrast(104%) !important; }
+        
+        /* Иконки статуса всегда сохраняют оригинальный цвет */
+        .st-icon { filter: none !important; }
+
         .is-down { opacity: 0.5 !important; }
-        .selected-unit { animation: flash 0.6s infinite alternate; filter: drop-shadow(0 0 10px #fff); z-index: 9999; }
+        .selected-unit .main-img { animation: flash 0.6s infinite alternate; filter: drop-shadow(0 0 10px #fff); z-index: 9999; }
         @keyframes flash { from { opacity: 1; } to { opacity: 0.3; } }
 
         .ui-element { position: absolute; z-index: 4000; }
@@ -101,7 +106,6 @@
         let units = {}, trLines = {}, isTr = false, isC = false, selId = null, mode = null, icon = '', speed = 0, curId = null, isD = true, showLines = true;
         let gromadaLayers = [], isGromadaActive = false;
 
-        // --- ЗАГРУЗКА ГРОМАД ---
         fetch('громады если надо.json').then(res => res.json()).then(data => {
             L.geoJson(data, {
                 style: { fillOpacity: 0, weight: 1, color: "transparent", interactive: false },
@@ -186,12 +190,14 @@
                 });
                 Object.keys(data).forEach(id => {
                     const u = data[id];
-                    const filter = isD ? 'yellow-filter' : '';
+                    // Класс yellow-filter теперь на контейнере, а CSS решает, что красить
+                    const themeClass = isD ? 'yellow-filter' : '';
+                    const selectClass = selId===id ? 'selected-unit' : '';
                     const dIcon = (isD && u.iconUrl === 's1.png') ? 'shahed.png' : u.iconUrl;
 
-                    const html = `<div class="unit-box ${u.isDown?'is-down':''}">
-                        <img src="${dIcon}" class="main-img ${filter} ${selId===id?'selected-unit':''}" style="transform:rotate(${u.angle}deg)">
-                        ${u.isCircling ? `<img src="krygi.png" class="st-icon st-krygi ${filter}">` : ''}
+                    const html = `<div class="unit-box ${u.isDown?'is-down':''} ${themeClass} ${selectClass}">
+                        <img src="${dIcon}" class="main-img" style="transform:rotate(${u.angle}deg)">
+                        ${u.isCircling ? `<img src="krygi.png" class="st-icon st-krygi">` : ''}
                         ${u.isDown ? `<img src="vtracheno.png" class="st-icon st-vtracheno">` : ''}
                     </div>`;
 
@@ -259,7 +265,6 @@
             }
         };
 
-        // --- ЦИКЛ ОБНОВЛЕНИЯ (200ms) ---
         setInterval(() => {
             let now = Date.now();
             const curCol = document.getElementById('trCol').value;
@@ -274,7 +279,6 @@
                 u.marker.setLatLng(cur);
                 if(showLines) u.line.setLatLngs([cur, [u.targetLat, u.targetLng]]);
                 
-                // Для радара громад (только активные цели)
                 if (u.iconUrl === 's1.png' || u.iconUrl === 'gerber.png') {
                     currentPositions.push(L.latLng(cur));
                 }
@@ -286,7 +290,6 @@
                 }
             });
 
-            // РАДАР ГРОМАД (подсветка при сближении)
             if (isGromadaActive) {
                 gromadaLayers.forEach(layer => {
                     let hit = currentPositions.some(p => 
